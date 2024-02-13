@@ -1,0 +1,61 @@
+import os
+from torchvision import transforms
+from PIL import Image
+from torch.utils.data import Dataset
+
+class CustomDataset(Dataset):
+    def __init__(self, images, labels=None, transform=None):
+        self.images = images
+        self.labels = labels
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        image_path = self.images[index]
+        image = Image.open(image_path).convert("RGB")
+
+        if self.labels:
+            label = self.labels[index]
+
+            if self.transform:
+                image = self.transform(image)
+
+            return image, label
+        else:
+            if self.transform:
+                image = self.transform(image)
+
+            return image
+
+def load_images_from_directory(directory):
+    return [os.path.join(directory, file) for file in sorted(os.listdir(directory)) if file.endswith(".png")]
+
+def load_images_and_labels(image_directory, label_directory=None):
+    image_files = load_images_from_directory(image_directory)
+    label_files = None
+
+    if label_directory:
+        label_files = load_images_from_directory(label_directory)
+
+    return image_files, label_files
+
+def get_datasets(image_directory, label_directory=None, transform=None):
+    images, labels = load_images_and_labels(image_directory, label_directory)
+    dataset = CustomDataset(images=images, labels=labels, transform=transform)
+    return dataset
+
+# Example usage
+train_images_dir = '/kaggle/input/lovedadataset/Train/Train/Urban/images_png'
+train_labels_dir = '/kaggle/input/lovedadataset/Train/Train/Urban/labels'  # Update to the correct path
+val_images_dir = '/kaggle/input/lovedadataset/Val/Val/Urban/images_png'
+val_labels_dir = '/kaggle/input/lovedadataset/Val/Val/Urban/labels'  # Update to the correct path
+test_images_dir = '/kaggle/input/lovedadataset/Test/Test/Urban/images_png'
+
+# You can adjust the transform as needed
+transform = transforms.Compose([transforms.ToTensor()])
+
+train_set = get_datasets(train_images_dir, train_labels_dir, transform)
+val_set = get_datasets(val_images_dir, val_labels_dir, transform)
+test_set = get_datasets(test_images_dir, None, transform)
